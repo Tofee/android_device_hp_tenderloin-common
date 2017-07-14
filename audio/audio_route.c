@@ -344,7 +344,12 @@ static void start_tag(void *data, const XML_Char *tag_name,
 			if (ar->mixer_state[i].ctl == ctl)
 				break;
 		}
-        ar->mixer_state[i].ignored = 1;
+		if (i == ar->num_mixer_ctls) {
+		    ALOGE("%s: couldn't find mixer %s !", __func__, attr_name);
+		}
+		else {
+		    ar->mixer_state[i].ignored = 1;
+		}
 	}
 
     else if (strcmp(tag_name, "ctl") == 0) {
@@ -394,13 +399,17 @@ static void start_tag(void *data, const XML_Char *tag_name,
                 if (ar->mixer_state[i].ctl == ctl)
                     break;
             }
-
-            /* apply the new value */
-            ar->mixer_state[i].ignored = 0;
-            ar->mixer_state[i].ctl_vals = num_values;
-			for (j = 0; j < num_values; j++) {
-            	ar->mixer_state[i].new_value[j] = values[j];
+	    if (i == ar->num_mixer_ctls) {
+		ALOGE("%s: couldn't find mixer %s !", __func__, attr_name);
+	    }
+	    else {
+		/* apply the new value */
+		ar->mixer_state[i].ignored = 0;
+		ar->mixer_state[i].ctl_vals = num_values;
+			    for (j = 0; j < num_values; j++) {
+		    ar->mixer_state[i].new_value[j] = values[j];
 			}
+	    }
         } else {
             /* nested ctl (within a path) */
             mixer_setting.ctl = ctl;
@@ -432,7 +441,7 @@ static int alloc_mixer_state(struct audio_route *ar)
         return -1;
     }
     ar->num_mixer_ctls = mixer_get_num_ctls(ar->mixer);
-    ar->mixer_state = malloc(ar->num_mixer_ctls * sizeof(struct mixer_state));
+    ar->mixer_state = malloc((ar->num_mixer_ctls+1) * sizeof(struct mixer_state));
     if (!ar->mixer_state)
         return -1;
 
